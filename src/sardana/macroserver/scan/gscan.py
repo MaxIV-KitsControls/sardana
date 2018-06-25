@@ -729,7 +729,9 @@ class GScan(Logger):
                                         source=src)
 
                 # @Fixme: Tango-centric. It should work for any Taurus Attribute
+                self.macro.debug(" - reading snapshot for %s:" % column.source) 
                 v = PyTango.AttributeProxy(column.source).read().value
+                self.macro.debug("           snapshot for %s is" % v)
                 column.pre_scan_value = v
                 column.shape = np.shape(v)
                 column.dtype = getattr(v, 'dtype', np.dtype(type(v))).name
@@ -981,7 +983,7 @@ class SScan(GScan):
                 pass
 
         # Move
-        self.debug("[START] motion")
+        self.macro.debug("[START] motion")
         move_start_time = time.time()
         try:
             state, positions = motion.move(step['positions'])
@@ -992,7 +994,7 @@ class SScan(GScan):
         except:
             self.dump_information(n, step)
             raise
-        self.debug("[ END ] motion")
+        self.macro.debug("[ END ] motion")
 
         curr_time = time.time()
         dt = curr_time - startts
@@ -1028,11 +1030,12 @@ class SScan(GScan):
 
         integ_time = step['integ_time']
         # Acquire data
-        self.debug("[START] acquisition")
+        self.macro.debug("Acquisition: [START]")
         state, data_line = mg.count(integ_time)
         for ec in self._extra_columns:
+            self.macro.debug("    [Reading %s]" % ec.getName())
             data_line[ec.getName()] = ec.read()
-        self.debug("[ END ] acquisition")
+        self.macro.debug("Acquisition: [END]")
         self._sum_acq_time += integ_time
         self._env['acqtime'] = self._sum_acq_time
 
@@ -1747,7 +1750,7 @@ class CSScan(CScan):
                 dt = time.time() - startts
 
                 # Acquire data
-                self.debug("[START] acquisition")
+                self.macro.debug("[START] acquisition")
                 state, data_line = mg.count(integ_time)
 
                 sum_integ_time += integ_time
@@ -1761,7 +1764,7 @@ class CSScan(CScan):
                 if not self._all_waypoints_finished:
                     for ec in self._extra_columns:
                         data_line[ec.getName()] = ec.read()
-                    self.debug("[ END ] acquisition")
+                    self.macro.debug("[ END ] acquisition")
 
                     # post-acq hooks
                     for hook in step.get('post-acq-hooks', ()):

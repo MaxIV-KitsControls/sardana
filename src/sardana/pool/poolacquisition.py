@@ -609,10 +609,19 @@ class PoolAcquisitionBase(PoolAction):
 
             # PreStartAll on all controllers
             for pool_ctrl in pool_ctrls:
-                pool_ctrl.ctrl.PreStartAll()
+                pool_ctrl.faulty = False
+
+            for pool_ctrl in pool_ctrls:
+                try:
+                    pool_ctrl.ctrl.PreStartAll()
+                except:
+                    pool_ctrl.faulty = True
+                    continue
 
             # PreStartOne & StartOne on all elements
             for pool_ctrl in pool_ctrls:
+                if pool_ctrl.faulty:
+                     continue
                 ctrl = pool_ctrl.ctrl
                 pool_ctrl_data = pool_ctrls_dict[pool_ctrl]
                 elements = pool_ctrl_data['channels'].keys()
@@ -623,12 +632,16 @@ class PoolAcquisitionBase(PoolAction):
                 for element in elements:
                     axis = element.axis
                     channel = channels[element]
+                    channel.faulty = False
                     if channel.enabled:
                         ret = ctrl.PreStartOne(axis, master_value)
                         if not ret:
-                            msg = ("%s.PreStartOne(%d) returns False" %
-                                   (pool_ctrl.name, axis))
-                            raise Exception(msg)
+                            pool_ctrl.faulty = True 
+                            channel.faulty = True
+                            #msg = ("%s.PreStartOne(%d) returns False. Declaring ctrl as Faulty" %
+                            #(pool_ctrl.name, axis))
+                            #raise Exception(msg)
+                            continue
                         try:
                             ctrl.StartOne(axis, master_value)
                         except Exception, e:
@@ -640,10 +653,19 @@ class PoolAcquisitionBase(PoolAction):
 
             # set the state of all elements to  and inform their listeners
             for channel in channels:
-                channel.set_state(State.Moving, propagate=2)
+                try:
+                    if channel.faulty:
+                        channel.set_state(State.Fault, propagate=2)
+                    else:
+                        channel.set_state(State.Moving, propagate=2)
+                except AttributeError:
+                    channel.set_state(State.Moving, propagate=2)
 
             # StartAll on all controllers
             for pool_ctrl in pool_ctrls:
+
+                if pool_ctrl.faulty: continue
+
                 try:
                     pool_ctrl.ctrl.StartAll()
                 except Exception, e:
