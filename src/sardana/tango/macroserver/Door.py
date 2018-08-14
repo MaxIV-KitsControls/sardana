@@ -330,6 +330,7 @@ class Door(SardanaDevice):
         element_list = self.macro_server_device.getElementList()
         attr.set_value(*element_list)
 
+    @DebugIt()
     def sendRecordData(self, format, data):
         self.push_change_event('RecordData', format, data)
 

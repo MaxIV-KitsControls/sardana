@@ -51,6 +51,8 @@ from PyTango import DevState, AttrDataFormat, AttrQuality, DevFailed, \
 from taurus import Factory, Device, Attribute
 from taurus.core.taurusbasetypes import TaurusEventType
 
+import logging
+
 try:
     from taurus.core.taurusvalidator import AttributeNameValidator as \
         TangoAttributeNameValidator
@@ -450,17 +452,20 @@ class PoolElement(BaseElement, TangoDevice):
             id = id[0]
         evt_wait = self._getEventWait()
         evt_wait.lock()
+        print("  WAIT TO FINISH <%s>" % self.getName())
         try:
             evt_wait.waitEvent(DevState.MOVING, after=id, equal=False,
                                timeout=timeout)
         finally:
             self.__go_end_time = time.time()
             self.__go_time = self.__go_end_time - self.__go_start_time
+            print("  FINISHED <%s> %s" % (self.getName(), self.__go_time))
             evt_wait.unlock()
             evt_wait.disconnect()
 
     @reservedOperation
     def go(self, *args, **kwargs):
+        print("  GO OPERATION <%s>" % self.getName())
         self._total_go_time = 0
         start_time = time.time()
         eid = self.start(*args, **kwargs)
@@ -1885,7 +1890,7 @@ class Pool(TangoDevice, MoveableSource):
                 else:
                     msg = "{0}: {1}".format(d.reason, d.desc)
             self.warning("Received elements error event %s", msg)
-            self.debug(evt_value)
+            # self.debug(evt_value)
             return
         elif evt_type not in CHANGE_EVT_TYPES:
             return
