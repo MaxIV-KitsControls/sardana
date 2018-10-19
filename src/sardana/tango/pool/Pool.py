@@ -665,6 +665,14 @@ class Pool(PyTango.Device_4Impl, Logger):
 
             db.put_device_attribute_property(device_name, data)
 
+        # PJB for some reason, sometimes a MG that already exists tries to be created
+        # There is no command in tango utils to check if device exists, so justtry to delete it, 
+        # which will fail if does not exist.
+        try:
+            util.delete_device("MotorGroup", full_name)
+            print("---device already existed!")  # should not happen
+        except:
+            print("---device did not exist, good") # expect this to happen
         util.create_device("MotorGroup", full_name, name, cb=create_motgrp_cb)
 
     #@DebugIt()
