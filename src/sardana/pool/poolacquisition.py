@@ -768,9 +768,15 @@ class PoolAcquisitionBase(PoolAction):
                 pass
 
             # PreStartAll on all enabled controllers
+            # PJB / Bixente - do not try to go further if prestart fails
             for ctrl in ctrls:
                 pool_ctrl = ctrl.element
-                pool_ctrl.ctrl.PreStartAll()
+                try:
+                    pool_ctrl.ctrl.PreStartAll()
+                except:
+                    msg = ("%s.PreStartAll(%d) FAILED" %
+                           (pool_ctrl.name, axis))
+                    raise Exception(msg)
 
             # PreStartOne & StartOne on all enabled elements
             for ctrl in ctrls:
