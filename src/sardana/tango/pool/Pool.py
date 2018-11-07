@@ -671,7 +671,7 @@ class Pool(PyTango.Device_4Impl, Logger):
         ## PJB since skipped check above, must delete MG if it exists
         print("--------- create motor group device", full_name, name)
         try:
-            util.delete_device("MotorGroup", full_nam)
+            util.delete_device("MotorGroup", full_name)
             print("---device already existed!")
         except:
             print("---device did not exist, good")
