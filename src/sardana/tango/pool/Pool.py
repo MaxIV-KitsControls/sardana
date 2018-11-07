@@ -650,7 +650,10 @@ class Pool(PyTango.Device_4Impl, Logger):
 
         full_name = kwargs.get("full_name", auto_full_name.format(**kwargs))
 
-        self._check_element(name, full_name)
+        # PJB Check will fail if motor group already exists
+        # PJB Not sure why this sometimes happens - use of two Pools and one MS?
+        # PJB Instead, if MG already exists, must delete it below
+        ## self._check_element(name, full_name) 
 
         elem_ids = self._get_moveable_ids(kwargs["elements"])
 
@@ -665,14 +668,13 @@ class Pool(PyTango.Device_4Impl, Logger):
 
             db.put_device_attribute_property(device_name, data)
 
-        # PJB for some reason, sometimes a MG that already exists tries to be created
-        # There is no command in tango utils to check if device exists, so justtry to delete it, 
-        # which will fail if does not exist.
+        ## PJB since skipped check above, must delete MG if it exists
+        print("--------- create motor group device", full_name, name)
         try:
-            util.delete_device("MotorGroup", full_name)
-            print("---device already existed!")  # should not happen
+            util.delete_device("MotorGroup", full_nam)
+            print("---device already existed!")
         except:
-            print("---device did not exist, good") # expect this to happen
+            print("---device did not exist, good")
         util.create_device("MotorGroup", full_name, name, cb=create_motgrp_cb)
 
     #@DebugIt()
