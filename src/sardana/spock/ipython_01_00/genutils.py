@@ -53,6 +53,7 @@ __docformat__ = 'restructuredtext'
 import sys
 import os
 import socket
+from shutil import copyfile
 
 import IPython
 import IPython.core.magic
@@ -773,6 +774,10 @@ config.IPKernelApp.pylab = 'inline'
         f.close()
     sys.stdout.write(MSG_DONE + '\n')
 
+def _copy_startup_template(location):
+    template = os.path.dirname(os.path.abspath(__file__)) +'/templates/00-checkmacros.py'
+    dest = location + '/startup/00-checkmacros.py'
+    copyfile(template, dest)
 
 def create_spock_profile(userdir, profile, door_name=None):
     """Create spock profile directory and configuration file from a template
@@ -790,6 +795,7 @@ def create_spock_profile(userdir, profile, door_name=None):
 
     try:
         _create_config_file(ipy_profile_dir)
+        _copy_startup_template(ipy_profile_dir)
     # catch BaseException in order to catch also KeyboardInterrupt
     except BaseException:
         import shutil
@@ -800,7 +806,6 @@ def create_spock_profile(userdir, profile, door_name=None):
                    'Remove it by hand e.g. rmdir {0}').format(ipy_profile_dir)
             print(msg)
         sys.exit(-1)
-
 
 def upgrade_spock_profile(ipy_profile_dir, door_name):
     """Upgrade spock profile by recreating configuration file from scratch
