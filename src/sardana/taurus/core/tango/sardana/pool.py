@@ -480,16 +480,56 @@ class PoolElement(BaseElement, TangoDevice):
         """
         # Due to taurus-org/taurus #573 we need to divide the timeout
         # in two intervals
+
         if timeout is not None:
             timeout = timeout / 2
         if id is not None:
             id = id[0]
         evt_wait = self._getEventWait()
         evt_wait.lock()
+
         try:
+            self.debug("---- PJB XXX WAIT FINISH ")
+            self.debug("---- PJB XXX WAIT FINISH details: %s %s " %  (str(id), str(timeout)))
             evt_wait.waitEvent(DevState.MOVING, after=id, equal=False,
                                timeout=timeout, retries=1)
+            self.debug("---- PJB XXX WAIT FINISH after wait ")
         finally:
+            self.debug("---- PJB XXX WAIT FINISH finally ")
+            self.__go_end_time = time.time()
+            self.__go_time = self.__go_end_time - self.__go_start_time
+            evt_wait.unlock()
+            evt_wait.disconnect()
+
+    def waitFinishMG(self, timeout=None, id=None):
+        """Wait for the operation to finish
+
+        :param timeout: optional timeout (seconds)
+        :type timeout: float
+        :param id: id of the opertation returned by start
+        :type id: tuple(float)
+        """
+        # Due to taurus-org/taurus #573 we need to divide the timeout
+        # in two intervals
+
+        # try a timeout
+        timeout = 10
+
+        if timeout is not None:
+            timeout = timeout / 2
+        if id is not None:
+            id = id[0]
+        evt_wait = self._getEventWait()
+        evt_wait.lock()
+
+        try:
+            self.debug("---- PJB XXX WAIT FINISH MG ")
+            self.debug("---- PJB XXX WAIT FINISH MG details: %s %s " %  (str(id), str(timeout)))
+            evt_wait.waitEvent(DevState.MOVING, after=id, equal=False,
+                               timeout=timeout, retries=1)
+            self.debug("---- PJB XXX WAIT FINISH MG after wait ")
+        finally:
+            self.debug("---- PJB XXX WAIT FINISH MG finally ")
             self.__go_end_time = time.time()
             self.__go_time = self.__go_end_time - self.__go_start_time
             evt_wait.unlock()
@@ -501,6 +541,14 @@ class PoolElement(BaseElement, TangoDevice):
         start_time = time.time()
         eid = self.start(*args, **kwargs)
         self.waitFinish(id=eid)
+        self._total_go_time = time.time() - start_time
+
+
+    def go_mg(self, *args, **kwargs):
+        self._total_go_time = 0
+        start_time = time.time()
+        eid = self.start(*args, **kwargs)
+        self.waitFinishMG(id=eid)
         self._total_go_time = time.time() - start_time
 
     def getLastGoTime(self):
@@ -1865,16 +1913,20 @@ class MeasurementGroup(PoolElement):
         self.command_inout("Prepare")
 
     def count_raw(self, start_time=None):
-        PoolElement.go(self)
+        self.debug("---- PJB XXX MeasurementGroup GO PoolElement")
+        PoolElement.go_mg(self)
+        self.debug("---- PJB XXX MeasurementGroup GO getStateEG")
         if start_time is None:
             start_time = time.time()
         state = self.getStateEG().readValue()
         if state == Fault:
             msg = "Measurement group ended acquisition with Fault state"
             raise Exception(msg)
+        self.debug("---- PJB XXX MeasurementGroup GO getValues")
         values = self.getValues()
         ret = state, values
         self._total_go_time = time.time() - start_time
+        self.debug("---- PJB XXX MeasurementGroup RET")
         return ret
 
     def go(self, *args, **kwargs):
@@ -1886,6 +1938,7 @@ class MeasurementGroup(PoolElement):
             return self.getStateEG().readValue(), self.getValues()
         self.putIntegrationTime(integration_time)
         self.setMoveable(None)
+        self.debug("---- PJB XXX MeasurementGroup GO PoolElement")
         self.setNbStarts(1)
         self.prepare()
         return self.count_raw(start_time)
