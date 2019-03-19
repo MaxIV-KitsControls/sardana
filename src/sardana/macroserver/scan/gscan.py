@@ -801,15 +801,20 @@ class GScan(Logger):
 
                 # @Fixme: Tango-centric. It should work for any Taurus
                 # Attribute
+                self.debug('PJB taking prescan reading...')
+                self.debug('PJB taking prescan reading, details %s'  % str(column.source))
                 v = PyTango.AttributeProxy(column.source).read().value
+                self.debug('PJB taking prescan reading, read value')
                 column.pre_scan_value = v
                 column.shape = np.shape(v)
                 column.dtype = getattr(v, 'dtype', np.dtype(type(v))).name
                 ret.append(column)
+                self.debug('PJB taking prescan reading, added value')
             except Exception:
                 self.macro.warning(
                     'Error taking pre-scan snapshot of %s (%s)', label, src)
                 self.debug('Details:', exc_info=1)
+        self.debug('PJB taking prescan reading, added ALL values')
         return ret
 
     def get_virtual_motors(self):
